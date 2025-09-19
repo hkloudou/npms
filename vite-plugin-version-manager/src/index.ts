@@ -49,7 +49,6 @@ export interface VersionManagerOptions {
    */
   autoIncrement?: boolean;
 
-
   /**
    * Custom version increment function
    * @param currentVersion Current version string
@@ -62,7 +61,6 @@ export interface VersionManagerOptions {
    * @default ['config.json']
    */
   excludeFromCleanup?: string[];
-
 
   /**
    * Enable versioned config extraction and generation
@@ -240,6 +238,57 @@ export default function vitePluginVersionManager(
   plugins.push({
     name: "vite-plugin-version-manager",
 
+    config(config) {
+      // Modify Vite build.outDir when enableVersionedConfig is true
+      if (enableVersionedConfig) {
+        try {
+          const packageJsonPath = path.resolve(process.cwd(), "package.json");
+          const packageJson: PackageJsonData = JSON.parse(
+            readFileSync(packageJsonPath, "utf-8")
+          );
+          const currentVersion = packageJson.version;
+          const versionedOutDir = `dist/${currentVersion}`;
+          // console.log(
+          //   `[vite-plugin-version-manager] versionedOutDir: ${JSON.stringify(
+          //     config
+          //   )}`
+          // );
+          if (!config.build) {
+            config.build = {};
+          }
+          if (!config.build.minify) {
+            config.build.minify = "esbuild";
+          }
+          if (!config.build.target) {
+            config.build.target = ["es2022", "chrome100", "safari14", "firefox100"];
+          }
+          if (!config.build.rollupOptions?.output) {
+            config.build.rollupOptions = config.build.rollupOptions || {};
+            config.build.rollupOptions.output = {
+              assetFileNames: (assetInfo) => {
+                if (assetInfo.name && assetInfo.name.endsWith(".css")) {
+                  return "[name]-[hash][extname]";
+                }
+                return "[name]-[hash][extname]";
+              },
+              chunkFileNames: "[name]-[hash].js",
+              entryFileNames: "[name]-[hash].js",
+            };
+          }
+          config.build.outDir = versionedOutDir;
+
+          console.log(
+            `[vite-plugin-version-manager] Set build.outDir to2: ${versionedOutDir}`
+          );
+        } catch (error) {
+          console.warn(
+            "[vite-plugin-version-manager] Failed to set versioned outDir:",
+            error
+          );
+        }
+      }
+    },
+
     async buildStart() {
       // Only run in production mode
       if (process.env.NODE_ENV !== "production") {
@@ -255,10 +304,12 @@ export default function vitePluginVersionManager(
           await fs.readFile(packageJsonPath, "utf-8")
         );
         const currentVersion = packageJson.version;
-        
+
         // Set distDir based on enableVersionedConfig
         const baseDistDir = "dist";
-        const distDir = enableVersionedConfig ? `${baseDistDir}/${currentVersion}` : baseDistDir;
+        const distDir = enableVersionedConfig
+          ? `${baseDistDir}/${currentVersion}`
+          : baseDistDir;
         const distDirPath = path.resolve(process.cwd(), baseDistDir);
 
         // Clean old version directories (only when enableVersionedConfig is true)
@@ -317,8 +368,8 @@ export default function vitePluginVersionManager(
         // Generate versioned config first (with current version)
         if (enableVersionedConfig) {
           const baseDistDir = "dist";
-          const distDir = enableVersionedConfig ? `${baseDistDir}/${currentVersion}` : baseDistDir;
-          const buildDir = path.resolve(process.cwd(), distDir);
+          const versionedDistDir = `${baseDistDir}/${currentVersion}`;
+          const buildDir = path.resolve(process.cwd(), versionedDistDir);
           await generateVersionedConfig(baseDistDir, packageJson, buildDir);
         }
 
