@@ -1,9 +1,9 @@
-name: Publish to NPM
+name: Publish vite-plugin-version-manager to NPM
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'vite-plugin-version-manager-v*'
   workflow_dispatch:
 
 jobs:
@@ -21,16 +21,24 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          cd vite-plugin-version-manager
+          npm ci
 
       - name: Build
-        run: npm run build
+        run: |
+          cd vite-plugin-version-manager
+          npm run build
 
       - name: Run tests (if any)
-        run: npm test --if-present
+        run: |
+          cd vite-plugin-version-manager
+          npm test --if-present
 
       - name: Publish to NPM
-        run: npm publish
+        run: |
+          cd vite-plugin-version-manager
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
