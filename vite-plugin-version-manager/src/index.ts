@@ -60,12 +60,6 @@ export interface VersionManagerOptions {
   distDir?: string
 
   /**
-   * Only run in production mode
-   * @default true
-   */
-  productionOnly?: boolean
-
-  /**
    * Enable versioned config extraction and generation
    * @default false
    */
@@ -78,165 +72,154 @@ const defaultVersionIncrementer = (currentVersion: string): string => {
   return versionParts.join('.')
 }
 
-const createVersionedConfigPlugin = (distDir: string): Plugin => {
-  return {
-    name: 'vite-plugin-version-manager-config',
-    enforce: 'post' as const,
-    async writeBundle(options, bundle) {
-      // Skip in development mode
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`[vite-plugin-version-manager-config] Skipping in development mode`)
-        return
-      }
+const generateVersionedConfig = async (distDir: string, pkg: PackageJsonData, buildDir: string): Promise<void> => {
+  const version = pkg.version
+  const outDir = path.resolve(process.cwd(), `${distDir}/${version}`)
+  const indexPath = path.join(buildDir, 'index.html')
+  const configPath = path.join(path.resolve(process.cwd(), distDir), 'config.json')
 
-      try {
-        const packageJsonPath = path.resolve(process.cwd(), 'package.json')
-        const pkg: PackageJsonData = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'))
-        const version = pkg.version
-
-        const outDir = path.resolve(process.cwd(), `${distDir}/${version}`)
-        const buildDir = options.dir || path.resolve(process.cwd(), distDir)
-        const indexPath = path.join(buildDir, 'index.html')
-        const configPath = path.join(path.resolve(process.cwd(), distDir), 'config.json')
-
-        // Check if index.html exists in build output
-        let indexContent = ''
-        try {
-          indexContent = await fs.readFile(indexPath, 'utf-8')
-          // Delete index.html file after reading in production mode
-          await fs.unlink(indexPath)
-        } catch (indexErr: unknown) {
-          if (indexErr instanceof Error && 'code' in indexErr && indexErr.code === 'ENOENT') {
-            console.log(`[vite-plugin-version-manager-config] Index.html not found at ${indexPath}`)
-            indexContent = ''
-          } else {
-            throw indexErr
-          }
-        }
-
-        let config: ConfigJson = {
-          version: version,
-          name: pkg.name,
-          description: pkg.description || 'N/A',
-          icon: `favicon.ico`,
-          indexHtml: indexContent,
-          uuid: pkg.uuid,
-          domains: pkg.domains || [],
-          publishTime: Date.now(),
-        }
-
-        // Try to read existing config
-        try {
-          const configData = await fs.readFile(configPath, 'utf-8')
-          config = { ...JSON.parse(configData), ...config }
-        } catch (err: unknown) {
-          if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') throw err
-        }
-
-        const configContent = JSON.stringify(config, null, 2)
-
-        // Write to dist/config.json (main config)
-        await fs.writeFile(configPath, configContent, 'utf-8')
-
-        // Ensure version directory exists
-        await fs.mkdir(outDir, { recursive: true })
-
-        // Write to dist/{version}/config.json (version-specific config)
-        const versionConfigPath = path.join(outDir, 'config.json')
-        await fs.writeFile(versionConfigPath, configContent, 'utf-8')
-
-        console.log(`[vite-plugin-version-manager-config] Updated config.json with version ${version}`)
-        console.log(
-          `[vite-plugin-version-manager-config] Published at: ${config.publishTime} (${new Date(config.publishTime).toISOString()})`,
-        )
-        console.log(`[vite-plugin-version-manager-config] Created version-specific config at ${versionConfigPath}`)
-      } catch (err) {
-        console.error('[vite-plugin-version-manager-config] Error:', err)
-        throw err
-      }
-    },
+  // Check if index.html exists in build output
+  let indexContent = ''
+  try {
+    indexContent = await fs.readFile(indexPath, 'utf-8')
+    // Delete index.html file after reading in production mode
+    await fs.unlink(indexPath)
+  } catch (indexErr: unknown) {
+    if (indexErr instanceof Error && 'code' in indexErr && indexErr.code === 'ENOENT') {
+      console.log(`[vite-plugin-version-manager] Index.html not found at ${indexPath}`)
+      indexContent = ''
+    } else {
+      throw indexErr
+    }
   }
+
+  let config: ConfigJson = {
+    version: version,
+    name: pkg.name,
+    description: pkg.description || 'N/A',
+    icon: `favicon.ico`,
+    indexHtml: indexContent,
+    uuid: pkg.uuid,
+    domains: pkg.domains || [],
+    publishTime: Date.now(),
+  }
+
+  // Try to read existing config
+  try {
+    const configData = await fs.readFile(configPath, 'utf-8')
+    config = { ...JSON.parse(configData), ...config }
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') throw err
+  }
+
+  const configContent = JSON.stringify(config, null, 2)
+
+  // Write to dist/config.json (main config)
+  await fs.writeFile(configPath, configContent, 'utf-8')
+
+  // Ensure version directory exists
+  await fs.mkdir(outDir, { recursive: true })
+
+  // Write to dist/{version}/config.json (version-specific config)
+  const versionConfigPath = path.join(outDir, 'config.json')
+  await fs.writeFile(versionConfigPath, configContent, 'utf-8')
+
+  console.log(`[vite-plugin-version-manager] Updated config.json with version ${version}`)
+  console.log(
+    `[vite-plugin-version-manager] Published at: ${config.publishTime} (${new Date(config.publishTime).toISOString()})`,
+  )
+  console.log(`[vite-plugin-version-manager] Created version-specific config at ${versionConfigPath}`)
 }
 
-export default function vitePluginVersionManager(options: VersionManagerOptions = {}): Plugin | Plugin[] {
+export default function vitePluginVersionManager(options: VersionManagerOptions = {}): Plugin {
   const {
     autoIncrement = true,
     cleanOldVersions = true,
     versionIncrementer = defaultVersionIncrementer,
     excludeFromCleanup = ['config.json'],
     distDir = 'dist',
-    productionOnly = true,
     enableVersionedConfig = false,
   } = options
 
-  const plugins: Plugin[] = [
-    {
-      name: 'vite-plugin-version-manager',
-      enforce: 'pre',
+  return {
+    name: 'vite-plugin-version-manager',
 
-      async buildStart() {
-        // Skip in development mode if productionOnly is true
-        if (productionOnly && process.env.NODE_ENV !== 'production') {
-          console.log(`[vite-plugin-version-manager] Skipping in development mode`)
-          return
-        }
+    async buildStart() {
+      // Only run in production mode
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[vite-plugin-version-manager] Skipping in development mode`)
+        return
+      }
 
-        try {
-          const packageJsonPath = path.resolve(process.cwd(), 'package.json')
-          const packageJson: PackageJsonData = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'))
+      try {
+        const packageJsonPath = path.resolve(process.cwd(), 'package.json')
+        const packageJson: PackageJsonData = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'))
 
-          const currentVersion = packageJson.version
-          const distDirPath = path.resolve(process.cwd(), distDir)
+        const currentVersion = packageJson.version
+        const distDirPath = path.resolve(process.cwd(), distDir)
 
-          // Clean old version directories
-          if (cleanOldVersions) {
-            try {
-              const files = await fs.readdir(distDirPath, { withFileTypes: true })
-              for (const file of files) {
-                const filePath = path.join(distDirPath, file.name)
-                const shouldExclude = excludeFromCleanup.some(
-                  (exclude) => file.name === exclude || file.name.includes(exclude),
-                )
+        // Clean old version directories
+        if (cleanOldVersions) {
+          try {
+            const files = await fs.readdir(distDirPath, { withFileTypes: true })
+            for (const file of files) {
+              const filePath = path.join(distDirPath, file.name)
+              const shouldExclude = excludeFromCleanup.some(
+                (exclude) => file.name === exclude || file.name.includes(exclude),
+              )
 
-                if (file.isDirectory() && file.name !== currentVersion && !shouldExclude) {
-                  await fs.rm(filePath, { recursive: true, force: true })
-                  console.log(`[vite-plugin-version-manager] Deleted old directory: ${filePath}`)
-                }
-              }
-            } catch (err: unknown) {
-              if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
-                throw err
+              if (file.isDirectory() && file.name !== currentVersion && !shouldExclude) {
+                await fs.rm(filePath, { recursive: true, force: true })
+                console.log(`[vite-plugin-version-manager] Deleted old directory: ${filePath}`)
               }
             }
+          } catch (err: unknown) {
+            if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
+              throw err
+            }
           }
-
-          // Auto increment version
-          if (autoIncrement) {
-            const newVersion = versionIncrementer(currentVersion)
-            packageJson.version = newVersion
-            packageJson.lastBuildTime = new Date().toISOString()
-
-            await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8')
-
-            console.log(
-              `[vite-plugin-version-manager] Updated version: ${currentVersion} → ${newVersion}`,
-            )
-          }
-        } catch (error) {
-          console.error('[vite-plugin-version-manager] Error:', error)
-          throw error
         }
-      },
-    }
-  ]
+      } catch (error) {
+        console.error('[vite-plugin-version-manager] Error:', error)
+        throw error
+      }
+    },
 
-  // Add versioned config plugin at the beginning if enabled
-  // This ensures config generation happens before version increment
-  if (enableVersionedConfig) {
-    plugins.unshift(createVersionedConfigPlugin(distDir))
+    async closeBundle() {
+      // Only run in production mode
+      if (process.env.NODE_ENV !== 'production') {
+        return
+      }
+
+      try {
+        const packageJsonPath = path.resolve(process.cwd(), 'package.json')
+        const packageJson: PackageJsonData = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'))
+        const currentVersion = packageJson.version
+
+        // Generate versioned config first (with current version)
+        if (enableVersionedConfig) {
+          const buildDir = path.resolve(process.cwd(), distDir)
+          await generateVersionedConfig(distDir, packageJson, buildDir)
+        }
+
+        // Then increment version for next build
+        if (autoIncrement) {
+          const newVersion = versionIncrementer(currentVersion)
+          packageJson.version = newVersion
+          packageJson.lastBuildTime = new Date().toISOString()
+
+          await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8')
+
+          console.log(
+            `[vite-plugin-version-manager] Updated version: ${currentVersion} → ${newVersion}`,
+          )
+        }
+      } catch (error) {
+        console.error('[vite-plugin-version-manager] Error:', error)
+        throw error
+      }
+    },
   }
-
-  return plugins.length === 1 ? plugins[0] : plugins
 }
 
 // Named export for CommonJS compatibility
