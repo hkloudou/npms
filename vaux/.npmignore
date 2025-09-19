@@ -1,0 +1,12 @@
+src/
+tsconfig.json
+.gitignore
+*.log
+.DS_Store
+node_modules/
+coverage/
+.nyc_output/
+.cache/
+.vscode/
+.idea/
+examples/

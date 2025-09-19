@@ -1,0 +1,65 @@
+{
+  "name": "vaux",
+  "version": "0.1.0",
+  "description": "A modern Vue 3 UI component library with TypeScript support",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "vue",
+    "vue3",
+    "ui",
+    "components",
+    "typescript",
+    "virtual-scroll",
+    "ui-library",
+    "frontend"
+  ],
+  "author": "hkloudou",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hkloudou/npms.git",
+    "directory": "vaux"
+  },
+  "bugs": {
+    "url": "https://github.com/hkloudou/npms/issues"
+  },
+  "homepage": "https://github.com/hkloudou/npms/tree/main/vaux#readme",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean && npm run build:css",
+    "build:css": "postcss src/styles/index.css -o dist/style.css",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "vue-tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+  "peerDependencies": {
+    "vue": ">=3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vue/tsconfig": "^0.5.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "postcss-cli": "^11.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vue": "^3.4.0",
+    "vue-tsc": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

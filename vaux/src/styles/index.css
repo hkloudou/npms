@@ -1,0 +1,45 @@
+/* Vaux UI Library Base Styles */
+
+/* Reset and base styles */
+.vaux-virtual-scroll {
+  box-sizing: border-box;
+}
+
+.vaux-virtual-scroll *,
+.vaux-virtual-scroll *::before,
+.vaux-virtual-scroll *::after {
+  box-sizing: inherit;
+}
+
+/* Virtual scroll specific styles */
+.vaux-virtual-scroll {
+  overflow: auto;
+  position: relative;
+}
+
+/* Scrollbar styling for better UX */
+.vaux-virtual-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.vaux-virtual-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.vaux-virtual-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.vaux-virtual-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Firefox scrollbar styling */
+.vaux-virtual-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f1f1f1;
+}
