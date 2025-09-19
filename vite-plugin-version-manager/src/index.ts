@@ -230,9 +230,10 @@ export default function vitePluginVersionManager(options: VersionManagerOptions 
     }
   ]
 
-  // Add versioned config plugin if enabled
+  // Add versioned config plugin at the beginning if enabled
+  // This ensures config generation happens before version increment
   if (enableVersionedConfig) {
-    plugins.push(createVersionedConfigPlugin(distDir))
+    plugins.unshift(createVersionedConfigPlugin(distDir))
   }
 
   return plugins.length === 1 ? plugins[0] : plugins
