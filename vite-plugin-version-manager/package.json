@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-version-manager",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A Vite plugin for automatic version management and dist cleanup",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -47,6 +47,9 @@
   },
   "peerDependencies": {
     "vite": ">=4.0.0"
+  },
+  "dependencies": {
+    "vite-plugin-cdn-import": "^1.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

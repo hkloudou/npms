@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { Plugin } from 'vite'
+import cdnImport from 'vite-plugin-cdn-import'
 
 interface PackageJsonData extends Record<string, unknown> {
   name: string
@@ -25,6 +27,20 @@ interface ConfigJson {
   uuid?: string
   domains: string[]
   publishTime: number
+}
+
+interface CDNModuleConfig {
+  name: string
+  var: string
+  path: string
+  css: string
+}
+
+interface GeneratedCDNModule {
+  name: string
+  var: string
+  path: string
+  css?: string
 }
 
 export interface VersionManagerOptions {
@@ -64,12 +80,42 @@ export interface VersionManagerOptions {
    * @default false
    */
   enableVersionedConfig?: boolean
+
+  /**
+   * CDN prefix for external modules
+   * @default 'https://unpkg.com'
+   */
+  cdnPrefix?: string
+
+  /**
+   * CDN module configurations
+   * If provided, enables CDN import functionality
+   */
+  cdnModules?: CDNModuleConfig[]
 }
 
 const defaultVersionIncrementer = (currentVersion: string): string => {
   const versionParts = currentVersion.split('.')
   versionParts[2] = String(parseInt(versionParts[2] || '0') + 1)
   return versionParts.join('.')
+}
+
+const generateCDNModules = (
+  cdnModules: CDNModuleConfig[],
+  cdnPrefix: string,
+  pkg: PackageJsonData
+): GeneratedCDNModule[] => {
+  return cdnModules.map((config) => {
+    const version = pkg.dependencies?.[config.name]?.replace('^', '') || 'latest'
+    return {
+      name: config.name,
+      var: config.var,
+      path: `${cdnPrefix}/${config.name}@${version}${config.path}`,
+      css: config.css && config.css.length > 0
+        ? `${cdnPrefix}/${config.name}@${version}${config.css}`
+        : undefined,
+    }
+  })
 }
 
 const generateVersionedConfig = async (distDir: string, pkg: PackageJsonData, buildDir: string): Promise<void> => {
@@ -131,7 +177,7 @@ const generateVersionedConfig = async (distDir: string, pkg: PackageJsonData, bu
   console.log(`[vite-plugin-version-manager] Created version-specific config at ${versionConfigPath}`)
 }
 
-export default function vitePluginVersionManager(options: VersionManagerOptions = {}): Plugin {
+export default function vitePluginVersionManager(options: VersionManagerOptions = {}): Plugin | Plugin[] {
   const {
     autoIncrement = true,
     cleanOldVersions = true,
@@ -139,87 +185,117 @@ export default function vitePluginVersionManager(options: VersionManagerOptions 
     excludeFromCleanup = ['config.json'],
     distDir = 'dist',
     enableVersionedConfig = false,
+    cdnPrefix = 'https://unpkg.com',
+    cdnModules,
   } = options
 
-  return {
-    name: 'vite-plugin-version-manager',
+  const plugins: Plugin[] = [
+    {
+      name: 'vite-plugin-version-manager',
 
-    async buildStart() {
-      // Only run in production mode
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`[vite-plugin-version-manager] Skipping in development mode`)
-        return
-      }
+      async buildStart() {
+        // Only run in production mode
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[vite-plugin-version-manager] Skipping in development mode`)
+          return
+        }
 
-      try {
-        const packageJsonPath = path.resolve(process.cwd(), 'package.json')
-        const packageJson: PackageJsonData = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'))
+        try {
+          const packageJsonPath = path.resolve(process.cwd(), 'package.json')
+          const packageJson: PackageJsonData = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'))
 
-        const currentVersion = packageJson.version
-        const distDirPath = path.resolve(process.cwd(), distDir)
+          const currentVersion = packageJson.version
+          const distDirPath = path.resolve(process.cwd(), distDir)
 
-        // Clean old version directories
-        if (cleanOldVersions) {
-          try {
-            const files = await fs.readdir(distDirPath, { withFileTypes: true })
-            for (const file of files) {
-              const filePath = path.join(distDirPath, file.name)
-              const shouldExclude = excludeFromCleanup.some(
-                (exclude) => file.name === exclude || file.name.includes(exclude),
-              )
+          // Clean old version directories
+          if (cleanOldVersions) {
+            try {
+              const files = await fs.readdir(distDirPath, { withFileTypes: true })
+              for (const file of files) {
+                const filePath = path.join(distDirPath, file.name)
+                const shouldExclude = excludeFromCleanup.some(
+                  (exclude) => file.name === exclude || file.name.includes(exclude),
+                )
 
-              if (file.isDirectory() && file.name !== currentVersion && !shouldExclude) {
-                await fs.rm(filePath, { recursive: true, force: true })
-                console.log(`[vite-plugin-version-manager] Deleted old directory: ${filePath}`)
+                if (file.isDirectory() && file.name !== currentVersion && !shouldExclude) {
+                  await fs.rm(filePath, { recursive: true, force: true })
+                  console.log(`[vite-plugin-version-manager] Deleted old directory: ${filePath}`)
+                }
+              }
+            } catch (err: unknown) {
+              if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
+                throw err
               }
             }
-          } catch (err: unknown) {
-            if (err instanceof Error && 'code' in err && err.code !== 'ENOENT') {
-              throw err
-            }
           }
+        } catch (error) {
+          console.error('[vite-plugin-version-manager] Error:', error)
+          throw error
         }
-      } catch (error) {
-        console.error('[vite-plugin-version-manager] Error:', error)
-        throw error
-      }
-    },
+      },
 
-    async closeBundle() {
-      // Only run in production mode
-      if (process.env.NODE_ENV !== 'production') {
-        return
-      }
-
-      try {
-        const packageJsonPath = path.resolve(process.cwd(), 'package.json')
-        const packageJson: PackageJsonData = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'))
-        const currentVersion = packageJson.version
-
-        // Generate versioned config first (with current version)
-        if (enableVersionedConfig) {
-          const buildDir = path.resolve(process.cwd(), distDir)
-          await generateVersionedConfig(distDir, packageJson, buildDir)
+      async closeBundle() {
+        // Only run in production mode
+        if (process.env.NODE_ENV !== 'production') {
+          return
         }
 
-        // Then increment version for next build
-        if (autoIncrement) {
-          const newVersion = versionIncrementer(currentVersion)
-          packageJson.version = newVersion
-          packageJson.lastBuildTime = new Date().toISOString()
+        try {
+          const packageJsonPath = path.resolve(process.cwd(), 'package.json')
+          const packageJson: PackageJsonData = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'))
+          const currentVersion = packageJson.version
 
-          await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8')
+          // Generate versioned config first (with current version)
+          if (enableVersionedConfig) {
+            const buildDir = path.resolve(process.cwd(), distDir)
+            await generateVersionedConfig(distDir, packageJson, buildDir)
+          }
 
-          console.log(
-            `[vite-plugin-version-manager] Updated version: ${currentVersion} → ${newVersion}`,
-          )
+          // Then increment version for next build
+          if (autoIncrement) {
+            const newVersion = versionIncrementer(currentVersion)
+            packageJson.version = newVersion
+            packageJson.lastBuildTime = new Date().toISOString()
+
+            await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8')
+
+            console.log(
+              `[vite-plugin-version-manager] Updated version: ${currentVersion} → ${newVersion}`,
+            )
+          }
+        } catch (error) {
+          console.error('[vite-plugin-version-manager] Error:', error)
+          throw error
         }
-      } catch (error) {
-        console.error('[vite-plugin-version-manager] Error:', error)
-        throw error
+      },
+    }
+  ]
+
+  // Add CDN import plugin if CDN modules are configured
+  if (cdnModules && cdnModules.length > 0) {
+    try {
+      const packageJsonPath = path.resolve(process.cwd(), 'package.json')
+      const packageJson: PackageJsonData = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+      const generatedCDNModules = generateCDNModules(cdnModules, cdnPrefix, packageJson)
+
+      const cdnPlugin = cdnImport({
+        modules: generatedCDNModules,
+      })
+      
+      // Handle both single plugin and plugin array
+      if (Array.isArray(cdnPlugin)) {
+        plugins.push(...cdnPlugin)
+      } else {
+        plugins.push(cdnPlugin as Plugin)
       }
-    },
+
+      console.log(`[vite-plugin-version-manager] CDN import enabled with ${generatedCDNModules.length} modules`)
+    } catch (error) {
+      console.warn('[vite-plugin-version-manager] Failed to setup CDN import:', error)
+    }
   }
+
+  return plugins.length === 1 ? plugins[0] : plugins
 }
 
 // Named export for CommonJS compatibility
