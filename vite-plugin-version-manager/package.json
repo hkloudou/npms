@@ -1,0 +1,47 @@
+{
+  "name": "vite-plugin-version-manager",
+  "version": "1.0.0",
+  "description": "A Vite plugin for automatic version management and dist cleanup",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "vite",
+    "plugin",
+    "version",
+    "build",
+    "cleanup",
+    "package.json"
+  ],
+  "author": "hkloudou",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hkloudou/npms.git",
+    "directory": "vite-plugin-version-manager"
+  },
+  "bugs": {
+    "url": "https://github.com/hkloudou/npms/issues"
+  },
+  "homepage": "https://github.com/hkloudou/npms/tree/main/vite-plugin-version-manager#readme",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "vite": "^4.0.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
