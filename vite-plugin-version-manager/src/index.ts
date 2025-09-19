@@ -284,9 +284,9 @@ export default function vitePluginVersionManager(options: VersionManagerOptions 
       
       // Handle both single plugin and plugin array
       if (Array.isArray(cdnPlugin)) {
-        plugins.push(...cdnPlugin)
+        plugins.unshift(...cdnPlugin)
       } else {
-        plugins.push(cdnPlugin as Plugin)
+        plugins.unshift(cdnPlugin as Plugin)
       }
 
       console.log(`[vite-plugin-version-manager] NPM CDN import enabled with ${generatedCdnModules.length} modules`)

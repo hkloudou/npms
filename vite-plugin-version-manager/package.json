@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-version-manager",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A Vite plugin for automatic version management and dist cleanup",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
