@@ -177,7 +177,7 @@ const generateVersionedConfig = async (distDir: string, pkg: PackageJsonData, bu
   console.log(`[vite-plugin-version-manager] Created version-specific config at ${versionConfigPath}`)
 }
 
-export default function vitePluginVersionManager(options: VersionManagerOptions = {}): Plugin | Plugin[] {
+export default function vitePluginVersionManager(options: VersionManagerOptions = {}): Plugin[] {
   const {
     autoIncrement = true,
     cleanOldVersions = true,
@@ -295,7 +295,7 @@ export default function vitePluginVersionManager(options: VersionManagerOptions 
     }
   }
 
-  return plugins.length === 1 ? plugins[0] : plugins
+  return plugins
 }
 
 // Named export for CommonJS compatibility
