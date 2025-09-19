@@ -3,7 +3,7 @@ name: Publish vite-plugin-version-manager to NPM
 on:
   push:
     tags:
-      - 'vite-plugin-version-manager-v*'
+      - 'vite-plugin-version-manager@v*'
   workflow_dispatch:
 
 jobs:
@@ -45,21 +45,3 @@ jobs:
           npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  release:
-    needs: publish
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
