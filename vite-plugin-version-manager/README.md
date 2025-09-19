@@ -64,6 +64,9 @@ export default defineConfig({
 
       // Run in all modes (not just production)
       productionOnly: false,
+
+      // Enable post-build config.json generation
+      enablePostBuild: true,
     }),
   ],
 })
@@ -79,6 +82,7 @@ export default defineConfig({
 | `excludeFromCleanup` | `string[]` | `['config.json']`       | Directories to exclude from cleanup      |
 | `distDir`            | `string`   | `'dist'`                | Custom dist directory path               |
 | `productionOnly`     | `boolean`  | `true`                  | Only run in production mode              |
+| `enablePostBuild`    | `boolean`  | `false`                 | Enable post-build config.json generation |
 
 ## How It Works
 
@@ -87,6 +91,35 @@ export default defineConfig({
 3. **Cleanup**: Removes old version directories from dist folder (except excluded ones)
 4. **Version Increment**: Increments the version and updates package.json
 5. **Timestamp**: Adds a lastBuildTime timestamp to package.json
+6. **Post-build Phase** (optional): Generates config.json with build metadata
+
+## Post-Build Features
+
+When `enablePostBuild` is set to `true`, the plugin will also:
+
+- **Generate config.json**: Creates a configuration file with build metadata
+- **Version-specific configs**: Creates separate config files for each version
+- **Index.html processing**: Reads and processes index.html from build output
+- **Metadata collection**: Includes version, name, description, domains, and publish time
+
+### Config.json Structure
+
+```json
+{
+  "version": "1.0.2",
+  "name": "my-app",
+  "description": "My awesome application",
+  "icon": "favicon.ico",
+  "indexHtml": "<!DOCTYPE html>...",
+  "uuid": "optional-uuid",
+  "domains": ["example.com"],
+  "publishTime": 1703123456789
+}
+```
+
+The config.json will be created in two locations:
+- `dist/config.json` - Main configuration file
+- `dist/{version}/config.json` - Version-specific configuration for rollback purposes
 
 ## Example Directory Structure
 
