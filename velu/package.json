@@ -1,6 +1,6 @@
 {
   "name": "velu",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A modern Vue 3 UI component library with TypeScript support",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -39,7 +39,7 @@
   "homepage": "https://github.com/hkloudou/npms/tree/main/velu#readme",
   "scripts": {
     "build": "npm run build:components && npm run build:css",
-    "build:components": "vue-tsc --declaration --emitDeclarationOnly && vite build",
+    "build:components": "vite build && vue-tsc -p tsconfig.build.json",
     "build:css": "postcss src/styles/index.css -o dist/style.css",
     "dev": "vite build --watch",
     "typecheck": "vue-tsc --noEmit",

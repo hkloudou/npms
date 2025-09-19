@@ -1,11 +1,23 @@
 import VirtualScroll from './components/VirtualScroll.vue'
+import type { App } from 'vue'
 
 // Export components
 export { VirtualScroll }
 
-// Export types
-export type { 
-  // You can add component prop types here as needed
+// Export types for better TypeScript support
+export interface VirtualScrollProps<T = any> {
+  items: T[]
+  itemHeight: number
+  containerHeight?: number
+  buffer?: number
+}
+
+export interface VirtualScrollEmits {
+  'visible-change': (payload: { start: number; end: number }) => void
+}
+
+export interface VirtualScrollExpose {
+  scrollToIndex: (index: number) => void
 }
 
 // Default export for convenience
@@ -14,6 +26,6 @@ export default {
 }
 
 // Install function for Vue.use()
-export const install = (app: any) => {
+export const install = (app: App) => {
   app.component('VeluVirtualScroll', VirtualScroll)
 }
