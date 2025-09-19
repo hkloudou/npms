@@ -82,16 +82,16 @@ export interface VersionManagerOptions {
   enableVersionedConfig?: boolean
 
   /**
-   * CDN prefix for external modules
+   * NPM CDN prefix for external modules
    * @default 'https://unpkg.com'
    */
-  cdnPrefix?: string
+  npmCdnPrefix?: string
 
   /**
-   * CDN module configurations
+   * NPM CDN module configurations
    * If provided, enables CDN import functionality
    */
-  cdnModules?: CDNModuleConfig[]
+  npmCdnModules?: CDNModuleConfig[]
 }
 
 const defaultVersionIncrementer = (currentVersion: string): string => {
@@ -100,19 +100,19 @@ const defaultVersionIncrementer = (currentVersion: string): string => {
   return versionParts.join('.')
 }
 
-const generateCDNModules = (
-  cdnModules: CDNModuleConfig[],
-  cdnPrefix: string,
+const generateNpmCdnModules = (
+  npmCdnModules: CDNModuleConfig[],
+  npmCdnPrefix: string,
   pkg: PackageJsonData
 ): GeneratedCDNModule[] => {
-  return cdnModules.map((config) => {
+  return npmCdnModules.map((config) => {
     const version = pkg.dependencies?.[config.name]?.replace('^', '') || 'latest'
     return {
       name: config.name,
       var: config.var,
-      path: `${cdnPrefix}/${config.name}@${version}${config.path}`,
+      path: `${npmCdnPrefix}/${config.name}@${version}${config.path}`,
       css: config.css && config.css.length > 0
-        ? `${cdnPrefix}/${config.name}@${version}${config.css}`
+        ? `${npmCdnPrefix}/${config.name}@${version}${config.css}`
         : undefined,
     }
   })
@@ -185,8 +185,8 @@ export default function vitePluginVersionManager(options: VersionManagerOptions 
     excludeFromCleanup = ['config.json'],
     distDir = 'dist',
     enableVersionedConfig = false,
-    cdnPrefix = 'https://unpkg.com',
-    cdnModules,
+    npmCdnPrefix = 'https://unpkg.com',
+    npmCdnModules,
   } = options
 
   const plugins: Plugin[] = [
@@ -271,15 +271,15 @@ export default function vitePluginVersionManager(options: VersionManagerOptions 
     }
   ]
 
-  // Add CDN import plugin if CDN modules are configured
-  if (cdnModules && cdnModules.length > 0) {
+  // Add NPM CDN import plugin if modules are configured
+  if (npmCdnModules && npmCdnModules.length > 0) {
     try {
       const packageJsonPath = path.resolve(process.cwd(), 'package.json')
       const packageJson: PackageJsonData = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-      const generatedCDNModules = generateCDNModules(cdnModules, cdnPrefix, packageJson)
+      const generatedCdnModules = generateNpmCdnModules(npmCdnModules, npmCdnPrefix, packageJson)
 
       const cdnPlugin = cdnImport({
-        modules: generatedCDNModules,
+        modules: generatedCdnModules,
       })
       
       // Handle both single plugin and plugin array
@@ -289,9 +289,9 @@ export default function vitePluginVersionManager(options: VersionManagerOptions 
         plugins.push(cdnPlugin as Plugin)
       }
 
-      console.log(`[vite-plugin-version-manager] CDN import enabled with ${generatedCDNModules.length} modules`)
+      console.log(`[vite-plugin-version-manager] NPM CDN import enabled with ${generatedCdnModules.length} modules`)
     } catch (error) {
-      console.warn('[vite-plugin-version-manager] Failed to setup CDN import:', error)
+      console.warn('[vite-plugin-version-manager] Failed to setup NPM CDN import:', error)
     }
   }
 

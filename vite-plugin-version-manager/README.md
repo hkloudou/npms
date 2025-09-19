@@ -62,11 +62,16 @@ export default defineConfig({
       // Custom dist directory
       distDir: 'build',
 
-      // Run in all modes (not just production)
-      productionOnly: false,
+      // Enable versioned config extraction
+      enableVersionedConfig: true,
 
-      // Enable post-build config.json generation
-      enablePostBuild: true,
+      // NPM CDN configuration
+      npmCdnPrefix: 'https://unpkg.com',
+      npmCdnModules: [
+        { name: 'vue', var: 'Vue', path: '/dist/vue.global.prod.js', css: '' },
+        { name: 'vue-router', var: 'VueRouter', path: '/dist/vue-router.global.prod.js', css: '' },
+        { name: 'pinia', var: 'Pinia', path: '/dist/pinia.iife.prod.js', css: '' },
+      ],
     }),
   ],
 })
@@ -74,15 +79,16 @@ export default defineConfig({
 
 ## Configuration Options
 
-| Option               | Type       | Default                 | Description                              |
-| -------------------- | ---------- | ----------------------- | ---------------------------------------- |
-| `autoIncrement`      | `boolean`  | `true`                  | Whether to enable version auto-increment |
-| `cleanOldVersions`   | `boolean`  | `true`                  | Whether to clean old version directories |
-| `versionIncrementer` | `function` | Default patch increment | Custom version increment function        |
-| `excludeFromCleanup` | `string[]` | `['config.json']`       | Directories to exclude from cleanup      |
-| `distDir`            | `string`   | `'dist'`                | Custom dist directory path               |
-| `productionOnly`     | `boolean`  | `true`                  | Only run in production mode              |
-| `enablePostBuild`    | `boolean`  | `false`                 | Enable post-build config.json generation |
+| Option                | Type       | Default                 | Description                                    |
+| --------------------- | ---------- | ----------------------- | ---------------------------------------------- |
+| `autoIncrement`       | `boolean`  | `true`                  | Whether to enable version auto-increment       |
+| `cleanOldVersions`    | `boolean`  | `true`                  | Whether to clean old version directories       |
+| `versionIncrementer`  | `function` | Default patch increment | Custom version increment function              |
+| `excludeFromCleanup`  | `string[]` | `['config.json']`       | Directories to exclude from cleanup            |
+| `distDir`             | `string`   | `'dist'`                | Custom dist directory path                     |
+| `enableVersionedConfig` | `boolean`  | `false`               | Enable versioned config extraction and generation |
+| `npmCdnPrefix`        | `string`   | `'https://unpkg.com'`   | NPM CDN prefix for external modules           |
+| `npmCdnModules`       | `array`    | `undefined`             | NPM CDN module configurations                  |
 
 ## How It Works
 
@@ -120,6 +126,43 @@ When `enablePostBuild` is set to `true`, the plugin will also:
 The config.json will be created in two locations:
 - `dist/config.json` - Main configuration file
 - `dist/{version}/config.json` - Version-specific configuration for rollback purposes
+
+## NPM CDN Features
+
+When `npmCdnModules` is provided, the plugin will also:
+
+- **Integrate CDN Import**: Automatically adds `vite-plugin-cdn-import` functionality
+- **Auto Version Resolution**: Extracts versions from your `package.json` dependencies
+- **Flexible CDN Prefix**: Configure any NPM CDN provider (unpkg, jsdelivr, etc.)
+- **Module Configuration**: Define external modules with custom paths and CSS
+
+### NPM CDN Module Structure
+
+```typescript
+interface CDNModuleConfig {
+  name: string     // Package name (must exist in dependencies)
+  var: string      // Global variable name
+  path: string     // Path to the module file
+  css: string      // Path to CSS file (optional)
+}
+```
+
+### Example Configuration
+
+```typescript
+vitePluginVersionManager({
+  npmCdnPrefix: 'https://cdn.jsdelivr.net/npm',
+  npmCdnModules: [
+    { name: 'vue', var: 'Vue', path: '/dist/vue.global.prod.js', css: '' },
+    { name: 'element-plus', var: 'ElementPlus', path: '/dist/index.full.min.js', css: '/dist/index.css' },
+  ]
+})
+```
+
+This will automatically resolve to:
+- `https://cdn.jsdelivr.net/npm/vue@3.4.0/dist/vue.global.prod.js`
+- `https://cdn.jsdelivr.net/npm/element-plus@2.5.0/dist/index.full.min.js`
+- `https://cdn.jsdelivr.net/npm/element-plus@2.5.0/dist/index.css`
 
 ## Example Directory Structure
 
