@@ -1,9 +1,9 @@
-name: Publish vaux to NPM
+name: Publish velu to NPM
 
 on:
   push:
     tags:
-      - 'vaux@v*'
+      - 'velu@v*'
   workflow_dispatch:
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd vaux
+          cd velu
           if [ -f package-lock.json ]; then
             npm ci
           else
@@ -31,17 +31,17 @@ jobs:
 
       - name: Build
         run: |
-          cd vaux
+          cd velu
           npm run build
 
       - name: Run tests (if any)
         run: |
-          cd vaux
+          cd velu
           npm test --if-present
 
       - name: Publish to NPM
         run: |
-          cd vaux
+          cd velu
           npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

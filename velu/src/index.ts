@@ -15,5 +15,5 @@ export default {
 
 // Install function for Vue.use()
 export const install = (app: any) => {
-  app.component('VauxVirtualScroll', VirtualScroll)
+  app.component('VeluVirtualScroll', VirtualScroll)
 }

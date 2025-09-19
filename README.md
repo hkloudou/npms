@@ -16,7 +16,7 @@ A Vite plugin for automatic version management and dist cleanup.
 
 [View Documentation](./vite-plugin-version-manager/README.md)
 
-### vaux
+### velu
 
 A modern Vue 3 UI component library with TypeScript support.
 
@@ -26,4 +26,4 @@ A modern Vue 3 UI component library with TypeScript support.
 - 🔧 **TypeScript**: Full TypeScript support with generics
 - 🎯 **Vue 3**: Built with Vue 3 Composition API
 
-[View Documentation](./vaux/README.md)
+[View Documentation](./velu/README.md)

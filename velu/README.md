@@ -1,4 +1,4 @@
-# Vaux
+# Velu
 
 A modern Vue 3 UI component library with TypeScript support.
 
@@ -13,11 +13,11 @@ A modern Vue 3 UI component library with TypeScript support.
 ## Installation
 
 ```bash
-npm install vaux --save
+npm install velu --save
 # or
-pnpm add vaux
+pnpm add velu
 # or
-yarn add vaux
+yarn add velu
 ```
 
 ## Quick Start
@@ -27,8 +27,8 @@ yarn add vaux
 ```typescript
 // main.ts
 import { createApp } from 'vue'
-import Vaux, { install } from 'vaux'
-import 'vaux/style.css'
+import Velu, { install } from 'velu'
+import 'velu/style.css'
 
 const app = createApp(App)
 app.use(install)
@@ -38,8 +38,8 @@ app.use(install)
 
 ```vue
 <script setup lang="ts">
-import { VirtualScroll } from 'vaux'
-import 'vaux/style.css'
+import { VirtualScroll } from 'velu'
+import 'velu/style.css'
 
 const items = ref(Array.from({ length: 10000 }, (_, i) => ({ id: i, name: `Item ${i}` })))
 </script>
@@ -116,7 +116,7 @@ High-performance virtual scrolling component for rendering large lists.
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { VirtualScroll } from 'vaux'
+import { VirtualScroll } from 'velu'
 
 interface Item {
   id: number
@@ -147,10 +147,10 @@ const handleVisibleChange = ({ start, end }: { start: number; end: number }) => 
 
 ## TypeScript Support
 
-Vaux is written in TypeScript and provides full type definitions:
+Velu is written in TypeScript and provides full type definitions:
 
 ```typescript
-import type { VirtualScrollProps } from 'vaux'
+import type { VirtualScrollProps } from 'velu'
 
 // Generic type support
 interface MyItem {

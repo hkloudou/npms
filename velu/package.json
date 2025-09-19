@@ -1,6 +1,6 @@
 {
-  "name": "vaux",
-  "version": "0.1.1",
+  "name": "velu",
+  "version": "0.1.2",
   "description": "A modern Vue 3 UI component library with TypeScript support",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -31,12 +31,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/hkloudou/npms.git",
-    "directory": "vaux"
+    "directory": "velu"
   },
   "bugs": {
     "url": "https://github.com/hkloudou/npms/issues"
   },
-  "homepage": "https://github.com/hkloudou/npms/tree/main/vaux#readme",
+  "homepage": "https://github.com/hkloudou/npms/tree/main/velu#readme",
   "scripts": {
     "build": "npm run build:components && npm run build:css",
     "build:components": "vue-tsc --declaration --emitDeclarationOnly && vite build",

@@ -157,7 +157,7 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="containerRef" class="vaux-virtual-scroll" :style="containerStyle">
+  <div ref="containerRef" class="velu-virtual-scroll" :style="containerStyle">
     <div :style="{ height: `${totalHeight}px`, position: 'relative' }">
       <div :style="{ transform: `translateY(${offsetY}px)`, position: 'absolute', width: '100%' }">
         <template v-for="(item, index) in visibleItems" :key="visibleRange.start + index">
@@ -169,27 +169,27 @@ defineExpose({
 </template>
 
 <style scoped>
-.vaux-virtual-scroll {
+.velu-virtual-scroll {
   overflow: auto;
 }
 
 /* Scrollbar styling */
-.vaux-virtual-scroll::-webkit-scrollbar {
+.velu-virtual-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.vaux-virtual-scroll::-webkit-scrollbar-track {
+.velu-virtual-scroll::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 10px;
 }
 
-.vaux-virtual-scroll::-webkit-scrollbar-thumb {
+.velu-virtual-scroll::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 10px;
 }
 
-.vaux-virtual-scroll::-webkit-scrollbar-thumb:hover {
+.velu-virtual-scroll::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
 </style>
