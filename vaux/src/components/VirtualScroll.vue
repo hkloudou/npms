@@ -2,30 +2,30 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 
 const props = defineProps<{
-  items: T[] // 需要显示的数据列表
-  itemHeight: number // 每个项目的高度
-  containerHeight?: number // 容器最大高度
-  buffer?: number // 上下缓冲的项目数量
+  items: T[] // List of items to display
+  itemHeight: number // Height of each item in pixels
+  containerHeight?: number // Maximum container height
+  buffer?: number // Number of buffer items above and below visible area
 }>()
 
 const emit = defineEmits<{
   'visible-change': [{ start: number; end: number }]
 }>()
 
-// 默认值
+// Default values
 const defaultBuffer = 5
 
-// 虚拟滚动相关数据
+// Virtual scrolling related data
 const containerRef = ref<HTMLElement | null>(null)
 const scrollTop = ref(0)
 const actualContainerHeight = ref(0)
 const buffer = computed(() => props.buffer || defaultBuffer)
 
-// 更新实际容器高度
+// Update actual container height
 const updateContainerHeight = () => {
   if (containerRef.value) {
     actualContainerHeight.value = containerRef.value.clientHeight
-    // 高度变化时也触发可见范围变化事件
+    // Trigger visible range change event when height changes
     emit('visible-change', {
       start: visibleRange.value.start,
       end: visibleRange.value.end,
@@ -33,11 +33,11 @@ const updateContainerHeight = () => {
   }
 }
 
-// 监听滚动事件
+// Handle scroll events
 const handleScroll = (e: Event) => {
   if (containerRef.value) {
     scrollTop.value = (e.target as HTMLElement).scrollTop
-    // 发出可见范围变化
+    // Emit visible range change
     emit('visible-change', {
       start: visibleRange.value.start,
       end: visibleRange.value.end,
@@ -45,7 +45,7 @@ const handleScroll = (e: Event) => {
   }
 }
 
-// 计算可见项目的起始和结束索引
+// Calculate visible item start and end indices
 const visibleRange = computed(() => {
   const start = Math.floor(scrollTop.value / props.itemHeight) - buffer.value
   const end =
@@ -57,12 +57,12 @@ const visibleRange = computed(() => {
   }
 })
 
-// 计算总高度
+// Calculate total height
 const totalHeight = computed(() => {
   return props.items.length * props.itemHeight
 })
 
-// 计算可见项目
+// Calculate visible items
 const visibleItems = computed(() => {
   if (!props.items || props.items.length === 0) return []
 
@@ -70,29 +70,29 @@ const visibleItems = computed(() => {
   return props.items.slice(start, end)
 })
 
-// 计算偏移量
+// Calculate offset
 const offsetY = computed(() => {
   const { start } = visibleRange.value
   return start * props.itemHeight
 })
 
-// 计算容器样式
+// Calculate container styles
 const containerStyle = computed(() => {
   if (props.containerHeight) {
-    // 如果指定了高度，使用 max-height
+    // If height is specified, use max-height
     return {
       maxHeight: `${props.containerHeight}px`,
       height: '100%',
     }
   } else {
-    // 如果没有指定高度，使用 100% 高度
+    // If no height specified, use 100% height
     return {
       height: '100%',
     }
   }
 })
 
-// 滚动到指定索引位置
+// Scroll to specified index position
 const scrollToIndex = (index: number) => {
   if (containerRef.value) {
     containerRef.value.scrollTop = index * props.itemHeight
@@ -104,23 +104,23 @@ const scrollToIndex = (index: number) => {
   }
 }
 
-// 监听数据变化
+// Watch for data changes
 watch(
   () => props.items,
   (newItems: T[], oldItems: T[]) => {
     if (newItems.length !== oldItems.length) {
-      // 只有数组长度变化时，重置滚动位置
+      // Reset scroll position only when array length changes
       scrollTop.value = 0
       if (containerRef.value) {
         containerRef.value.scrollTop = 0
       }
     }
-    // 如果长度相同，保持当前滚动位置
+    // If length is the same, keep current scroll position
   },
   { deep: true },
 )
 
-// 监听容器大小变化
+// Watch for container size changes
 watch(containerRef, (newRef) => {
   if (newRef) {
     const resizeObserver = new ResizeObserver(() => {
@@ -128,7 +128,7 @@ watch(containerRef, (newRef) => {
     })
     resizeObserver.observe(newRef)
 
-    // 清理函数
+    // Cleanup function
     return () => {
       resizeObserver.disconnect()
     }
@@ -140,7 +140,7 @@ onMounted(() => {
     containerRef.value.addEventListener('scroll', handleScroll)
     updateContainerHeight()
 
-    // 初始化完成后触发一次可见范围变化
+    // Trigger visible range change once after initialization
     nextTick(() => {
       emit('visible-change', {
         start: visibleRange.value.start,
@@ -150,7 +150,7 @@ onMounted(() => {
   }
 })
 
-// 暴露方法供父组件调用
+// Expose methods for parent component
 defineExpose({
   scrollToIndex,
 })
@@ -173,7 +173,7 @@ defineExpose({
   overflow: auto;
 }
 
-/* 滚动条美化 */
+/* Scrollbar styling */
 .vaux-virtual-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
